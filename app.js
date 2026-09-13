@@ -12,6 +12,7 @@ const P=[
 [11,14,[["🧠","Organizza ciò che serve per domani"],["📚","Leggi per almeno 20 minuti"],["❤️","Aiuta qualcuno senza che te lo chieda"],["⏱️","Gestisci 20 minuti di studio/attività"],["🧹","Svolgi una responsabilità domestica"]]]
 ];
 let db,s,active,tab="quests";
+const $=s=>document.querySelector(s);
 const img=id=>`https://assets.pokemon.com/assets/cms2/img/pokedex/detail/${String(id).padStart(3,"0")}.png`;
 const id=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random();
 const today=()=>new Date().toISOString().slice(0,10);
