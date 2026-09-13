@@ -3,17 +3,4 @@
 /* Child themes */
 .theme-page{background:var(--theme-soft);border-radius:20px;padding:10px;transition:background .2s ease}.theme-page button{background:var(--theme);}.theme-page .tabs button.secondary,.theme-page header button{background:#eee;color:#333}.theme-page .tabs button.active{background:var(--theme);color:#fff}.theme-page .bar{background:var(--theme)}.theme-page .chip{background:color-mix(in srgb,var(--theme) 12%,white);color:var(--theme)}.theme-name{color:var(--theme)}.kids button.theme-rosso.active{background:#d63031}.kids button.theme-rosa.active{background:#e84393}.kids button.theme-viola.active{background:#6c5ce7}.kids button.theme-verde.active{background:#00a86b}.kids button.theme-blu.active{background:#2878d4}.kids button.theme-arancione.active{background:#e67e22}.kids button.theme-oro.active{background:#c79500}.kids button.active{color:#fff}.kids button{transition:all .18s ease}.theme-page .poke.selected{border-color:var(--theme);background:var(--theme-soft)}.theme-page .quest{border-color:color-mix(in srgb,var(--theme) 28%,#e5e5e5)}select{width:100%;padding:10px;border:1px solid #ccc;border-radius:9px;font:inherit;margin:4px 0;background:#fff}.theme-preview{padding:8px 10px;border:2px solid;border-radius:10px;font-weight:800;margin:4px 0 8px}
 
-/* v7.4 theme activation */
-.theme-page{background:var(--theme-soft)!important;min-height:calc(100vh - 80px)}
-.theme-page button{background:var(--theme)}
-.theme-page .kids button:not(.active){background:#fff;color:#333}
-.theme-page .kids button.active{background:var(--theme)!important;color:#fff!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--theme) 35%,transparent),0 5px 12px color-mix(in srgb,var(--theme) 25%,transparent);transform:scale(1.05)}
-.theme-page .tabs button{background:var(--theme)}
-.theme-page .tabs button.active{background:var(--theme)!important;color:#fff}
-.theme-page .bar{background:var(--theme)!important}
-.theme-page .chip{background:color-mix(in srgb,var(--theme) 12%,white);color:var(--theme)}
-.theme-page .theme-name{color:var(--theme)}
-.theme-page .poke.selected{border-color:var(--theme)!important;background:var(--theme-soft)!important}
-.theme-page .quest{border-color:color-mix(in srgb,var(--theme) 35%,#e5e5e5)}
-.theme-page .quest button{background:var(--theme)}
-.simple .quest button{box-shadow:0 2px 5px color-mix(in srgb,var(--theme) 30%,transparent)}
+.danger{background:#d63031!important;margin-left:6px}.theme-page{min-height:calc(100vh - 150px)}.theme-page .card{background:rgba(255,255,255,.94)}
