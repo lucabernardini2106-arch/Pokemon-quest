@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#6c5ce7">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+<title>Pokémon Quest v6</title>
+</head>
+<body>
+<header>
+  <div>
+    <h1>⚔️ Pokémon Quest</h1>
+    <div class="sub">Versione 6 · salvataggio robusto e gestione Quest</div>
+  </div>
+  <button id="adultBtn" class="secondary">🔐 Area adulti</button>
+</header>
+
+<main>
+  <section id="home" class="screen">
+    <div id="children"></div>
+    <div class="card">
+      <h2>🤝 Quest di gruppo</h2>
+      <div id="groupQuest"></div>
+    </div>
+  </section>
+
+  <section id="adult" class="screen hidden">
+    <div class="card">
+      <div class="row between">
+        <h2>🔐 Area adulti</h2>
+        <button id="closeAdult" class="secondary">Chiudi</button>
+      </div>
+      <div id="loginBox">
+        <p>Inserisci il PIN iniziale <b>1234</b>.</p>
+        <input id="pin" type="password" inputmode="numeric" maxlength="12" placeholder="PIN">
+        <button id="login">Accedi</button>
+        <p id="loginMsg" class="error"></p>
+      </div>
+      <div id="adultPanel" class="hidden">
+        <div class="tabs">
+          <button data-tab="kidsTab">👨‍👩‍👧 Bambini</button>
+          <button data-tab="questsTab">📜 Quest</button>
+          <button data-tab="backupTab">💾 Dati</button>
+        </div>
+        <div id="kidsTab" class="tab"></div>
+        <div id="questsTab" class="tab hidden"></div>
+        <div id="backupTab" class="tab hidden"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="modal"></dialog>
+<script src="app.js"></script>
+</body>
+</html>

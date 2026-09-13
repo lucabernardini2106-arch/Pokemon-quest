@@ -1,0 +1,10 @@
+{
+  "name":"Pokémon Quest",
+  "short_name":"Pokémon Quest",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f6f4ff",
+  "theme_color":"#6c5ce7",
+  "lang":"it",
+  "icons":[]
+}
