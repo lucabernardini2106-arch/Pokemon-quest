@@ -24,8 +24,16 @@ function open(){return new Promise((ok,no)=>{let r=indexedDB.open(DB,1);r.onupgr
 function get(){return new Promise((ok,no)=>{let r=db.transaction(STORE).objectStore(STORE).get("s");r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 function save(){return new Promise((ok,no)=>{let r=db.transaction(STORE,"readwrite").objectStore(STORE).put(s,"s");r.onsuccess=ok;r.onerror=()=>no(r.error)})}
 function init(){s={version:7,pin:"1234",kids:[kid("Giuseppe",9),kid("Anna Chiara",7),kid("Elisabetta",5),kid("Miriam",3)],lib:[],assign:{},group:{icon:"🤝",text:"Fate insieme qualcosa di utile in casa",done:false,date:today()},reward:{small:350,big:850}};ensure()}
-function ensure(){s.kids.forEach(k=>{s.assign[k.id]??=[];pool(Math.max(1,k.age)).forEach(([ic,t])=>{let q=s.lib.find(x=>x.text===t);if(!q){q={id:id(),icon:ic,text:t};s.lib.push(q)}if(!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)})});if(s.group.date!==today()){s.group.done=false;s.group.date=today()}}
-async function boot(){await open();s=await get();if(!s){init();await save()}else{ensure();await save()}active=s.kids[0]?.id;render()}
+function ensure(){
+ s=s||{}; s.version=7; s.pin=s.pin||"1234"; s.kids=Array.isArray(s.kids)?s.kids:[]; s.lib=Array.isArray(s.lib)?s.lib:[]; s.assign=s.assign&&typeof s.assign==="object"?s.assign:{}; s.reward=s.reward||{small:350,big:850}; s.group=s.group||{icon:"🤝",text:"Fate insieme qualcosa di utile in casa",done:false,date:today()};
+ if(!s.kids.length){s.kids=[kid("Giuseppe",9),kid("Anna Chiara",7),kid("Elisabetta",5),kid("Miriam",3)]}
+ s.kids.forEach(k=>{k.age=Math.max(1,Math.min(14,Number(k.age)||7));k.xp=Number(k.xp)||0;k.weekly=Number(k.weekly)||0;k.line=Number(k.line)||0;k.done=k.done&&typeof k.done==="object"?k.done:{};s.assign[k.id]=Array.isArray(s.assign[k.id])?s.assign[k.id]:[];pool(Math.max(3,k.age)).forEach(([ic,t])=>{let q=s.lib.find(x=>x.text===t);if(!q){q={id:id(),icon:ic,text:t};s.lib.push(q)}if(!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)})});
+ if(s.group.date!==today()){s.group.done=false;s.group.date=today()}
+}
+async function boot(){
+ try{await open();s=await get();if(!s)init();ensure();await save();active=s.kids[0]?.id||null;render()}
+ catch(e){console.error(e);$("#app").innerHTML=`<div class="card"><h2>⚠️ Errore di caricamento</h2><p>Il browser ha bloccato il salvataggio locale.</p><p class="small">${esc(e?.message||e)}</p><button onclick="location.reload()">Ricarica</button></div>`}
+}
 function assigned(k){return(s.assign[k.id]||[]).map(x=>s.lib.find(q=>q.id===x)).filter(Boolean)}
 function done(k,q){return!!k.done[today()+"|"+q.id]}
 function render(){const k=s.kids.find(x=>x.id===active);if(!k){$("#app").innerHTML="";return}let l=lvl(k.xp),z=st(l),p=L[k.line],html=`<div class="kids">${s.kids.map(x=>`<button class="${x.id===active?"active":""}" data-k="${x.id}">${x.age<=6?"👶":"🧒"} ${esc(x.name)}</button>`).join("")}</div><div class="${k.age<=6?"simple":""}"><div class="card hero"><img src="${img(p[3+z])}"><div><div class="row between"><b style="font-size:1.3rem">${p[z]}</b><span class="chip">Lv ${l}</span></div><div class="small">${p[0]} → ${p[1]} → ${p[2]}</div><div class="progress"><div class="bar" style="width:${k.xp%100}%"></div></div><div class="row"><span class="chip">⭐ ${k.xp} XP</span><span class="chip">📅 ${k.weekly} XP</span></div></div></div><div class="tabs"><button class="${tab==="quests"?"active":""}" data-t="quests">📜 Quest</button><button class="${tab==="pokemon"?"active":""}" data-t="pokemon">⚡ Pokémon</button><button class="${tab==="progress"?"active":""}" data-t="progress">🏆 Progressi</button></div>${pane(k)}</div>`;$("#app").innerHTML=html;bind()}
