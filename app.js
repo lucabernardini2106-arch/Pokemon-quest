@@ -44,7 +44,8 @@ function render(){
  if(!k){$("#app").innerHTML="";return}
  let l=lvl(k.xp),z=st(l),p=L[k.line];
  let tabs=s.kids.map(x=>`<button class="${x.id===active?"active":""}" data-k="${x.id}">${x.age<=6?"👶":"🧒"} ${esc(x.name)}</button>`).join("");
- let html=`<div class="kids">${tabs}</div>
+ let html=`<div class="theme-page" style="--theme:${THEMES[k.theme].strong};--theme-soft:${THEMES[k.theme].soft}">
+ <div class="kids">${tabs}</div>
  <div class="${k.age<=6?"simple":""}">
  <div class="card hero"><img src="${img(p[3+z])}"><div>
  <div class="row between"><b class="theme-name" style="font-size:1.3rem">${p[z]}</b><span class="chip">Lv ${l}</span></div>
@@ -53,7 +54,7 @@ function render(){
  <div class="row"><span class="chip">⭐ ${k.xp} XP</span><span class="chip">📅 ${k.weekly} XP</span></div>
  </div></div>
  <div class="tabs"><button class="${tab==="quests"?"active":""}" data-t="quests">${k.age<=6?"⭐ Le mie missioni":"📜 Quest"}</button><button class="${tab==="pokemon"?"active":""}" data-t="pokemon">⚡ Pokémon</button><button class="${tab==="progress"?"active":""}" data-t="progress">🏆 Progressi</button></div>
- ${pane(k)}</div>`;
+ ${pane(k)}</div></div>`;
  $("#app").innerHTML=html;bind();
 }
 function speakQuest(text){
