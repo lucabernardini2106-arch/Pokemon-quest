@@ -1,5 +1,5 @@
 const DB="pokemonQuestV8",STORE="state";
-const APP_VERSION=90;
+const APP_VERSION=91;
 const THEMES={rosso:{name:"Rosso",strong:"#d63031",soft:"#fff1f1"},rosa:{name:"Rosa",strong:"#e84393",soft:"#fff0f7"},viola:{name:"Viola",strong:"#6c5ce7",soft:"#f2efff"},verde:{name:"Verde",strong:"#00a86b",soft:"#effbf5"},blu:{name:"Blu",strong:"#2878d4",soft:"#eef6ff"},arancione:{name:"Arancione",strong:"#e67e22",soft:"#fff5e9"},oro:{name:"Giallo Oro",strong:"#c79500",soft:"#fff9df"}};
 const THEME_KEYS=Object.keys(THEMES);
 const L=[
@@ -18,12 +18,15 @@ const P=[
 const GROUPS=[
 ["🧸","Riordinare insieme la cameretta",15],["🛋️","Riordinare insieme il salone",15],["🧹","Fare insieme una piccola pulizia della casa",20],["🧺","Raccogliere e sistemare insieme i giochi",15],["🍽️","Preparare insieme la tavola per un pasto",15],["🍕","Aiutare insieme a preparare la cena",20],["🧩","Fare un gioco da tavolo tutti insieme",15],["🎨","Fare un disegno o lavoretto insieme",15],["🧱","Costruire qualcosa insieme con LEGO o costruzioni",20],["📖","Leggere insieme una storia",15],["🎭","Inventare e mettere in scena una piccola storia",20],["🧩","Fare un puzzle insieme",20],["🔎","Fare una piccola caccia al tesoro in casa",20],["⚽","Giocare insieme all'aperto",20],["🎵","Fare insieme 15 minuti di musica o canto",15],["🧹","Sistemare insieme una zona della casa scelta dai genitori",20],["❤️","Fare qualcosa di gentile per un altro membro della famiglia",15],["🌱","Fare giardinaggio insieme",20],["🏡","Riordinare il cortile insieme",20]
 ];
-let db,s,active,tab="quests";
+let db,s,active,tab="quests",evolutionNotice=null;
 const $=s=>document.querySelector(s);
 const img=id=>`https://assets.pokemon.com/assets/cms2/img/pokedex/detail/${String(id).padStart(3,"0")}.png`;
 const id=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random();
 const today=()=>new Date().toISOString().slice(0,10);
 const lvl=x=>Math.min(30,Math.floor(x/100)+1),st=l=>l>=20?2:l>=10?1:0;
+function levelXP(x){return Math.max(0,Math.min(100,Number(x)%100));}
+function evolutionFor(level,line){const stage=st(level);return L[line]?.[stage]||L[line]?.[0]||"Pokémon";}
+function evolutionEvent(line,oldXP,newXP){const oldL=lvl(oldXP),newL=lvl(newXP);const thresholds=[10,20].filter(t=>oldL<t&&newL>=t);if(!thresholds.length)return null;const target=thresholds[thresholds.length-1];const p=L[line];return {line,level:target,from: p[target===10?0:1],to:p[target===10?1:2],id:id()};}
 const pokeXP=k=>Number(k.pokeXp?.[k.line]||0);
 const ensurePokeXP=k=>{if(!Array.isArray(k.pokeXp)||k.pokeXp.length!==L.length){const old=Number(k.xp)||0;k.pokeXp=L.map(()=>0);k.pokeXp[Math.max(0,Math.min(L.length-1,Number(k.line)||0))]=old;}k.pokeXp=k.pokeXp.map(x=>Math.max(0,Math.min(3000,Number(x)||0)));k.xp=pokeXP(k);};
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -107,6 +110,7 @@ function speakQuest(text){
  speechSynthesis.cancel();
  let u=new SpeechSynthesisUtterance(text);u.lang="it-IT";u.rate=.9;speechSynthesis.speak(u);
 }
+function evolutionNoticeHtml(){if(!evolutionNotice)return "";const e=evolutionNotice,p=L[e.line];return `<div class="evo-overlay" id="evo-overlay"><div class="evo-box"><div class="evo-title">✨ EVOLUZIONE! ✨</div><div class="evo-stage"><img class="evo-old" src="${img(p[e.level===10?3:4])}" alt="${esc(e.from)}"><span class="evo-arrow">→</span><img class="evo-new" src="${img(p[e.level===10?4:5])}" alt="${esc(e.to)}"></div><div class="evo-text">${esc(e.from)} si è evoluto in <b>${esc(e.to)}</b>!</div><div class="evo-level">⭐ Livello ${e.level}</div></div></div>`}
 function pane(k){
  if(tab==="quests"){
   let qs=dailyQs(k),doneN=qs.filter(q=>done(k,q)).length;
@@ -120,13 +124,14 @@ function pane(k){
   ${qs.map(q=>{let d=done(k,q);return `<div class="quest ${d?"done":""}"><span class="icon">${q.icon}</span><span class="text">${esc(q.text)} <span class="small">+${q.xp ?? 10} XP</span></span><button data-q="${q.id}">${d?"↩️ Annulla":"✅ Fatto"}</button></div>`}).join("")}
   <div class="small">10 Quest al giorno. Ogni Quest vale XP diversi in base alla difficoltà/tempo. Completandole tutte ottieni il bonus di completamento della giornata, senza XP extra.</div>${groupCard(k)}</div>`;
  }
- if(tab==="pokemon")return`<div class="pane active card"><h2>⚡ Scegli il tuo Pokémon</h2><p class="small">Ogni bambino ha una scelta indipendente. Lo stesso Pokémon può essere scelto da più bambini.</p><div class="grid">${L.map((p,i)=>`<div class="poke ${i===k.line?"selected":""}"><img src="${img(p[3])}"><b>${p[0]}</b><div class="small">${p[1]} → ${p[2]}</div><button data-p="${i}">${i===k.line?"✓ Scelto":"Scegli"}</button></div>`).join("")}</div></div>`;
+ if(tab==="pokemon")return`<div class="pane active card"><h2>⚡ I miei Pokémon</h2><p class="small">Tocca un Pokémon per sceglierlo per la prossima Quest. Qui puoi vedere subito livello e XP di ogni linea.</p><div class="poke-grid">${L.map((p,i)=>{const px=Number(k.pokeXp?.[i]||0),pl=lvl(px),ps=st(pl),pid=p[3+ps],bar=levelXP(px);return `<div class="poke-card ${i===k.line?"selected":""}" data-p="${i}"><div class="poke-card-top"><b>${p[0]}</b>${i===k.line?'<span class="selected-badge">✓</span>':''}</div><img src="${img(pid)}" alt="${esc(p[0])}"><div class="poke-evo-name">${p[ps]}</div><div class="poke-level">Livello <b>${pl}</b></div><div class="progress"><div class="bar" style="width:${pl>=30?100:bar}%"></div></div><div class="poke-xp">${pl>=30?'Livello massimo':`${bar} / 100 XP`}</div><button data-ps="${i}">${i===k.line?"✓ Pokémon scelto":"Scegli"}</button></div>`}).join("")}</div>${evolutionNoticeHtml()}</div>`;
  return`<div class="pane active card"><h2>🏆 Progressi</h2><div class="grid"><div class="chip">Livello ${lvl(pokeXP(k))}/30</div><div class="chip">XP totale ${pokeXP(k)}</div><div class="chip">XP settimana ${k.weekly}</div></div><p>${lvl(pokeXP(k))<30?`Mancano ${lvl(pokeXP(k))*100-pokeXP(k)} XP al prossimo livello.`:"🎉 Livello massimo!"}</p><div class="card">🎁 Piccola ricompensa: <b>${s.reward.small} XP</b> settimanali<br>🏆 Grande ricompensa: <b>${s.reward.big} XP</b> settimanali</div></div>`;
 }
 function bind(){
  document.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{active=b.dataset.k;tab="quests";render()});
  document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
  document.querySelectorAll("[data-p]").forEach(b=>b.onclick=async()=>{let kk=s.kids.find(k=>k.id===active);kk.line=+b.dataset.p;kk.xp=pokeXP(kk);await save();render()});
+ document.querySelectorAll("[data-ps]").forEach(b=>b.onclick=async e=>{e.stopPropagation();let kk=s.kids.find(k=>k.id===active);kk.line=+b.dataset.ps;kk.xp=pokeXP(kk);await save();render()});
  document.querySelectorAll("[data-speak]").forEach(b=>b.onclick=()=>speakQuest(b.dataset.speak));
  bindGroup();
  document.querySelectorAll("[data-q]").forEach(b=>b.onclick=async()=>{
@@ -150,16 +155,18 @@ function bind(){
     }
    }
    else{
-    let earnedLine=k.line;
-    k.done[key]=1;k.done[key+"|earned"]=base;k.done[key+"|line"]=earnedLine;k.pokeXp[earnedLine]=Math.min(3000,Number(k.pokeXp[earnedLine]||0)+base);k.xp=pokeXP(k);k.weekly+=base;
+    let earnedLine=k.line,oldXP=Number(k.pokeXp[earnedLine]||0),newXP=Math.min(3000,oldXP+base);
+    k.done[key]=1;k.done[key+"|earned"]=base;k.done[key+"|line"]=earnedLine;k.pokeXp[earnedLine]=newXP;k.xp=pokeXP(k);k.weekly+=base;
     // Completing all 10 Quest gives a completion marker, not extra XP.
     let all=qs.length>0 && qs.every(x=>done(k,x));
     if(all){k.dailyBonus[today()]=1;k.dailyBonus[today()+"|line"]=k.line}
+    evolutionNotice=evolutionEvent(earnedLine,oldXP,newXP);
    }
    await save();render();
+   if(evolutionNotice){const noticeId=evolutionNotice.id;setTimeout(()=>{if(evolutionNotice?.id===noticeId){evolutionNotice=null;render()}},3200)}
  });
 }
-function bindGroup(){document.querySelectorAll("[data-gq]").forEach(b=>b.onclick=async()=>{let k=s.kids.find(x=>x.id===active),q=groupQuest();if(!k||!q)return;k.groupDone=k.groupDone||{};let xp=q.xp||15;if(groupDone(k)){let earned=Number(k.groupDone["xp|"+today()]||xp);let earnedLine=Number(k.groupDone["line|"+today()] ?? k.line);delete k.groupDone[today()];delete k.groupDone["xp|"+today()];delete k.groupDone["line|"+today()];k.pokeXp[earnedLine]=Math.max(0,Number(k.pokeXp[earnedLine]||0)-earned);k.xp=pokeXP(k);k.weekly=Math.max(0,k.weekly-earned)}else{let earnedLine=k.line;k.groupDone[today()]=1;k.groupDone["xp|"+today()]=xp;k.groupDone["line|"+today()]=earnedLine;k.pokeXp[earnedLine]=Math.min(3000,Number(k.pokeXp[earnedLine]||0)+xp);k.xp=pokeXP(k);k.weekly+=xp}await save();render()})}
+function bindGroup(){document.querySelectorAll("[data-gq]").forEach(b=>b.onclick=async()=>{let k=s.kids.find(x=>x.id===active),q=groupQuest();if(!k||!q)return;k.groupDone=k.groupDone||{};let xp=q.xp||15;if(groupDone(k)){let earned=Number(k.groupDone["xp|"+today()]||xp);let earnedLine=Number(k.groupDone["line|"+today()] ?? k.line);delete k.groupDone[today()];delete k.groupDone["xp|"+today()];delete k.groupDone["line|"+today()];k.pokeXp[earnedLine]=Math.max(0,Number(k.pokeXp[earnedLine]||0)-earned);k.xp=pokeXP(k);k.weekly=Math.max(0,k.weekly-earned)}else{let earnedLine=k.line,oldXP=Number(k.pokeXp[earnedLine]||0),newXP=Math.min(3000,oldXP+xp);k.groupDone[today()]=1;k.groupDone["xp|"+today()]=xp;k.groupDone["line|"+today()]=earnedLine;k.pokeXp[earnedLine]=newXP;k.xp=pokeXP(k);k.weekly+=xp;evolutionNotice=evolutionEvent(earnedLine,oldXP,newXP)}await save();render();if(evolutionNotice){const noticeId=evolutionNotice.id;setTimeout(()=>{if(evolutionNotice?.id===noticeId){evolutionNotice=null;render()}},3200)}})}
 function admin(){let m=$("#modal");m.innerHTML=`<div style="overflow:auto"><div class="row between"><h2>🔐 Area adulti</h2><button id="close">Chiudi</button></div><div class="tabs"><button data-a="kids">👨‍👩‍👧 Bambini</button><button data-a="quests">📜 Quest giornaliere</button><button data-a="groups">👨‍👩‍👧‍👦 Quest di gruppo</button><button data-a="data">💾 Dati</button></div><div id="ab"></div></div>`;m.showModal();$("#close").onclick=()=>m.close();document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>adminPane(b.dataset.a));adminPane("kids")}
 function adminPane(t){
  let b=$("#ab");
