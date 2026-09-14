@@ -23,6 +23,8 @@ const img=id=>`https://assets.pokemon.com/assets/cms2/img/pokedex/detail/${Strin
 const id=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random();
 const today=()=>new Date().toISOString().slice(0,10);
 const lvl=x=>Math.min(30,Math.floor(x/100)+1),st=l=>l>=20?2:l>=10?1:0;
+const pokeXP=k=>Number(k.pokeXp?.[k.line]||0);
+const ensurePokeXP=k=>{if(!Array.isArray(k.pokeXp)||k.pokeXp.length!==L.length){const old=Number(k.xp)||0;k.pokeXp=L.map(()=>0);k.pokeXp[Math.max(0,Math.min(L.length-1,Number(k.line)||0))]=old;}k.pokeXp=k.pokeXp.map(x=>Math.max(0,Math.min(3000,Number(x)||0)));k.xp=pokeXP(k);};
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function pool(a){return(P.find(x=>a>=x[0]&&a<=x[1])||P[4])[2]}
 function xpForText(t){let x=String(t).toLowerCase();if(/20 minuti|20 min|studio|attività fisica|caccia al tesoro|rompicapo/.test(x))return 20;if(/15 minuti|15 min|senza distrazioni|autonomamente|senza che te lo chied/.test(x))return 15;if(/10 minuti|10 min|leggi|leggere|libro|impara|imparato|organizza|responsabilità/.test(x))return 10;return 5}
@@ -57,7 +59,7 @@ function init(){s={version:8,pin:"1234",kids:[kid("Giuseppe",9,"rosso"),kid("Ann
 function ensure(){
  s=s||{}; s.version=8; s.pin=s.pin||"1234"; s.kids=Array.isArray(s.kids)?s.kids:[]; s.lib=Array.isArray(s.lib)?s.lib:[]; s.assign=s.assign&&typeof s.assign==="object"?s.assign:{}; s.reward=s.reward||{small:350,big:850}; s.groupLib=Array.isArray(s.groupLib)?s.groupLib:GROUPS.map(([icon,text,xp])=>({id:id(),icon,text,xp})); s.group=s.group&&typeof s.group==="object"?s.group:{date:today(),qid:null,done:{}}; s.group.done=s.group.done&&typeof s.group.done==="object"?s.group.done:{}; s.groupHistory=s.groupHistory&&typeof s.groupHistory==="object"?s.groupHistory:{};
  if(!s.kids.length){s.kids=[kid("Giuseppe",9,"rosso"),kid("Anna Chiara",7,"rosa"),kid("Elisabetta",5,"viola"),kid("Miriam",3,"verde")]}
- s.kids.forEach(k=>{k.age=Math.max(1,Math.min(14,Number(k.age)||7));k.theme=THEME_KEYS.includes(k.theme)?k.theme:"viola";k.avatar=k.avatar||"none";k.dailyBonus=k.dailyBonus&&typeof k.dailyBonus==="object"?k.dailyBonus:{};k.groupDone=k.groupDone&&typeof k.groupDone==="object"?k.groupDone:{};k.xp=Number(k.xp)||0;k.weekly=Number(k.weekly)||0;k.line=Number(k.line)||0;k.done=k.done&&typeof k.done==="object"?k.done:{};s.assign[k.id]=Array.isArray(s.assign[k.id])?s.assign[k.id]:[];FIXED.forEach(f=>{let q=s.lib.find(x=>x.text===f.text);if(!q){q={id:id(),...f};s.lib.push(q)}else{q.icon=f.icon;q.xp=f.xp}if(!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)});pool(Math.max(3,k.age)).forEach(([ic,t])=>{if(ROTATION_TERMS.test(t.toLowerCase()))return;let q=s.lib.find(x=>x.text===t);if(!q){q={id:id(),icon:ic,text:t,xp:xpForText(t)};s.lib.push(q)}else{q.xp=Math.max(5,Math.min(30,Number(q.xp)||xpForText(q.text)))}if(!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)})});
+ s.kids.forEach(k=>{k.age=Math.max(1,Math.min(14,Number(k.age)||7));k.theme=THEME_KEYS.includes(k.theme)?k.theme:"viola";k.avatar=k.avatar||"none";k.dailyBonus=k.dailyBonus&&typeof k.dailyBonus==="object"?k.dailyBonus:{};k.groupDone=k.groupDone&&typeof k.groupDone==="object"?k.groupDone:{};k.xp=Number(k.xp)||0;k.weekly=Number(k.weekly)||0;k.line=Number(k.line)||0;ensurePokeXP(k);k.done=k.done&&typeof k.done==="object"?k.done:{};s.assign[k.id]=Array.isArray(s.assign[k.id])?s.assign[k.id]:[];FIXED.forEach(f=>{let q=s.lib.find(x=>x.text===f.text);if(!q){q={id:id(),...f};s.lib.push(q)}else{q.icon=f.icon;q.xp=f.xp}if(!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)});pool(Math.max(3,k.age)).forEach(([ic,t])=>{if(ROTATION_TERMS.test(t.toLowerCase()))return;let q=s.lib.find(x=>x.text===t);if(!q){q={id:id(),icon:ic,text:t,xp:xpForText(t)};s.lib.push(q)}else{q.xp=Math.max(5,Math.min(30,Number(q.xp)||xpForText(q.text)))}if(!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)})});
  if(s.group.date!==today()){s.group.date=today();s.group.qid=null;s.group.done={}}
  if(!s.group.qid && s.groupLib.length){let used=Object.entries(s.groupHistory).filter(([d])=>weekKey(d)===weekKey()).map(([,q])=>q);let choices=s.groupLib.filter(q=>!used.includes(q.id));if(!choices.length)choices=s.groupLib.slice();let seed=[...today()].reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),13);s.group.qid=choices[seed%choices.length].id;s.groupHistory[today()]=s.group.qid}
 }
@@ -70,15 +72,15 @@ function done(k,q){return!!k.done[today()+"|"+q.id]}
 function render(){
  const k=s.kids.find(x=>x.id===active);
  if(!k){$("#app").innerHTML="";return}
- let l=lvl(k.xp),z=st(l),p=L[k.line];
+ let currentXP=pokeXP(k);let l=lvl(currentXP),z=st(l),p=L[k.line];
  let tabs=s.kids.map(x=>`<button class="kid-tab theme-${x.theme} ${x.id===active?"active":""}" data-k="${x.id}">${x.avatar && x.avatar!=="none" ? esc(x.avatar)+" " : ""}${esc(x.name)}</button>`).join("");
  let html=`<div class="kids">${tabs}</div>
  <div class="theme-page ${k.age<=6?"simple":""}" style="--theme:${THEMES[k.theme].strong};--theme-soft:${THEMES[k.theme].soft}">
  <div class="card hero"><img src="${img(p[3+z])}"><div>
  <div class="row between"><b class="theme-name" style="font-size:1.3rem">${p[z]}</b><span class="chip">Lv ${l}</span></div>
  <div class="small">${p[0]} → ${p[1]} → ${p[2]}</div>
- <div class="progress"><div class="bar" style="width:${k.xp%100}%"></div></div>
- <div class="row"><span class="chip">⭐ ${k.xp} XP</span><span class="chip">📅 ${k.weekly} XP</span></div>
+ <div class="progress"><div class="bar" style="width:${currentXP%100}%"></div></div>
+ <div class="row"><span class="chip">⭐ ${currentXP} XP</span><span class="chip">📅 ${k.weekly} XP</span></div>
  </div></div>
  <div class="tabs"><button class="${tab==="quests"?"active":""}" data-t="quests">${k.age<=6?"⭐ Le mie missioni":"📜 Quest"}</button><button class="${tab==="pokemon"?"active":""}" data-t="pokemon">⚡ Pokémon</button><button class="${tab==="progress"?"active":""}" data-t="progress">🏆 Progressi</button></div>
  ${pane(k)}</div></div>`;
@@ -103,12 +105,12 @@ function pane(k){
   <div class="small">10 Quest al giorno. Ogni Quest vale XP diversi in base alla difficoltà/tempo. Completandole tutte ottieni il bonus di completamento della giornata, senza XP extra.</div>${groupCard(k)}</div>`;
  }
  if(tab==="pokemon")return`<div class="pane active card"><h2>⚡ Scegli il tuo Pokémon</h2><p class="small">Ogni bambino ha una scelta indipendente. Lo stesso Pokémon può essere scelto da più bambini.</p><div class="grid">${L.map((p,i)=>`<div class="poke ${i===k.line?"selected":""}"><img src="${img(p[3])}"><b>${p[0]}</b><div class="small">${p[1]} → ${p[2]}</div><button data-p="${i}">${i===k.line?"✓ Scelto":"Scegli"}</button></div>`).join("")}</div></div>`;
- return`<div class="pane active card"><h2>🏆 Progressi</h2><div class="grid"><div class="chip">Livello ${lvl(k.xp)}/30</div><div class="chip">XP totale ${k.xp}</div><div class="chip">XP settimana ${k.weekly}</div></div><p>${lvl(k.xp)<30?`Mancano ${lvl(k.xp)*100-k.xp} XP al prossimo livello.`:"🎉 Livello massimo!"}</p><div class="card">🎁 Piccola ricompensa: <b>${s.reward.small} XP</b> settimanali<br>🏆 Grande ricompensa: <b>${s.reward.big} XP</b> settimanali</div></div>`;
+ return`<div class="pane active card"><h2>🏆 Progressi</h2><div class="grid"><div class="chip">Livello ${lvl(pokeXP(k))}/30</div><div class="chip">XP totale ${pokeXP(k)}</div><div class="chip">XP settimana ${k.weekly}</div></div><p>${lvl(pokeXP(k))<30?`Mancano ${lvl(pokeXP(k))*100-pokeXP(k)} XP al prossimo livello.`:"🎉 Livello massimo!"}</p><div class="card">🎁 Piccola ricompensa: <b>${s.reward.small} XP</b> settimanali<br>🏆 Grande ricompensa: <b>${s.reward.big} XP</b> settimanali</div></div>`;
 }
 function bind(){
  document.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{active=b.dataset.k;tab="quests";render()});
  document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
- document.querySelectorAll("[data-p]").forEach(b=>b.onclick=async()=>{s.kids.find(k=>k.id===active).line=+b.dataset.p;await save();render()});
+ document.querySelectorAll("[data-p]").forEach(b=>b.onclick=async()=>{let kk=s.kids.find(k=>k.id===active);kk.line=+b.dataset.p;kk.xp=pokeXP(kk);await save();render()});
  document.querySelectorAll("[data-speak]").forEach(b=>b.onclick=()=>speakQuest(b.dataset.speak));
  bindGroup();
  document.querySelectorAll("[data-q]").forEach(b=>b.onclick=async()=>{
@@ -118,25 +120,30 @@ function bind(){
     // Read the earned XP BEFORE removing the completion marker.
     // Also revoke the daily-completion bonus if this cancellation means the day is no longer complete.
     let earned=Number(k.done[key+"|earned"]||base);
-    delete k.done[key];delete k.done[key+"|earned"];
-    k.xp=Math.max(0,k.xp-earned);k.weekly=Math.max(0,k.weekly-earned);
+    let earnedLine=Number(k.done[key+"|line"] ?? k.line);
+    delete k.done[key];delete k.done[key+"|earned"];delete k.done[key+"|line"];
+    k.pokeXp[earnedLine]=Math.max(0,Number(k.pokeXp[earnedLine]||0)-earned);
+    k.xp=pokeXP(k);k.weekly=Math.max(0,k.weekly-earned);
     let remaining=qs.filter(x=>done(k,x)).length;
     let bonus=Number(k.dailyBonus?.[today()]||0);
     if(bonus && remaining<qs.length){
-      k.xp=Math.max(0,k.xp-bonus);k.weekly=Math.max(0,k.weekly-bonus);
-      delete k.dailyBonus[today()];
+      let bonusLine=Number(k.dailyBonus?.[today()+"|line"] ?? k.line);
+      k.pokeXp[bonusLine]=Math.max(0,Number(k.pokeXp[bonusLine]||0)-bonus);
+      k.xp=pokeXP(k);k.weekly=Math.max(0,k.weekly-bonus);
+      delete k.dailyBonus[today()];delete k.dailyBonus[today()+"|line"];
     }
    }
    else{
-    k.done[key]=1;k.done[key+"|earned"]=base;k.xp=Math.min(3000,k.xp+base);k.weekly+=base;
+    let earnedLine=k.line;
+    k.done[key]=1;k.done[key+"|earned"]=base;k.done[key+"|line"]=earnedLine;k.pokeXp[earnedLine]=Math.min(3000,Number(k.pokeXp[earnedLine]||0)+base);k.xp=pokeXP(k);k.weekly+=base;
     // Completing all 10 Quest gives a completion marker, not extra XP.
     let all=qs.length>0 && qs.every(x=>done(k,x));
-    if(all){k.dailyBonus[today()]=1}
+    if(all){k.dailyBonus[today()]=1;k.dailyBonus[today()+"|line"]=k.line}
    }
    await save();render();
  });
 }
-function bindGroup(){document.querySelectorAll("[data-gq]").forEach(b=>b.onclick=async()=>{let k=s.kids.find(x=>x.id===active),q=groupQuest();if(!k||!q)return;k.groupDone=k.groupDone||{};let xp=q.xp||15;if(groupDone(k)){let earned=Number(k.groupDone["xp|"+today()]||xp);delete k.groupDone[today()];delete k.groupDone["xp|"+today()];k.xp=Math.max(0,k.xp-earned);k.weekly=Math.max(0,k.weekly-earned)}else{k.groupDone[today()]=1;k.groupDone["xp|"+today()]=xp;k.xp=Math.min(3000,k.xp+xp);k.weekly+=xp}await save();render()})}
+function bindGroup(){document.querySelectorAll("[data-gq]").forEach(b=>b.onclick=async()=>{let k=s.kids.find(x=>x.id===active),q=groupQuest();if(!k||!q)return;k.groupDone=k.groupDone||{};let xp=q.xp||15;if(groupDone(k)){let earned=Number(k.groupDone["xp|"+today()]||xp);let earnedLine=Number(k.groupDone["line|"+today()] ?? k.line);delete k.groupDone[today()];delete k.groupDone["xp|"+today()];delete k.groupDone["line|"+today()];k.pokeXp[earnedLine]=Math.max(0,Number(k.pokeXp[earnedLine]||0)-earned);k.xp=pokeXP(k);k.weekly=Math.max(0,k.weekly-earned)}else{let earnedLine=k.line;k.groupDone[today()]=1;k.groupDone["xp|"+today()]=xp;k.groupDone["line|"+today()]=earnedLine;k.pokeXp[earnedLine]=Math.min(3000,Number(k.pokeXp[earnedLine]||0)+xp);k.xp=pokeXP(k);k.weekly+=xp}await save();render()})}
 function admin(){let m=$("#modal");m.innerHTML=`<div style="overflow:auto"><div class="row between"><h2>🔐 Area adulti</h2><button id="close">Chiudi</button></div><div class="tabs"><button data-a="kids">👨‍👩‍👧 Bambini</button><button data-a="quests">📜 Quest giornaliere</button><button data-a="groups">👨‍👩‍👧‍👦 Quest di gruppo</button><button data-a="data">💾 Dati</button></div><div id="ab"></div></div>`;m.showModal();$("#close").onclick=()=>m.close();document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>adminPane(b.dataset.a));adminPane("kids")}
 function adminPane(t){
  let b=$("#ab");
