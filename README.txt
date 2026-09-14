@@ -1,3 +1,3 @@
-Pokémon Quest v8.9
+Pokémon Quest v9.0
 
-Versione con catalogo Quest aggiornato, XP giornalieri bilanciati tra i bambini e cache PWA aggiornata.
+Catalogo Quest aggiornato, XP giornalieri bilanciati tra tutti i bambini, cache PWA aggiornata e correzioni di caricamento.
