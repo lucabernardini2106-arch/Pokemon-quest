@@ -23,22 +23,26 @@ const lvl=x=>Math.min(30,Math.floor(x/100)+1),st=l=>l>=20?2:l>=10?1:0;
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function pool(a){return(P.find(x=>a>=x[0]&&a<=x[1])||P[4])[2]}
 function xpForText(t){let x=String(t).toLowerCase();if(/20 minuti|15 minuti|20 min|senza distrazioni|studio|attività fisica/.test(x))return 15;if(/10 minuti|leggi|leggere|libro|impara|imparato|organizza|responsabilità|autonomamente|senza che te lo chied/.test(x))return 10;return 5}
-function dailyQs(k){let all=assigned(k);if(all.length<=10)return all;let seed=[...today(),...String(k.id)].reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),7);let arr=all.map(q=>({q,r:((seed=(seed*1664525+1013904223)>>>0)/4294967296)})).sort((a,b)=>a.r-b.r).map(x=>x.q);let target=100, n=Math.min(10,arr.length), chosen=[];
-  // Prefer an exact 100-XP set when possible; otherwise choose the closest set below 100.
-  function find(start,need,count,sel){if(count===0)return need===0?sel:null;if(arr.length-start<count||need<5)return null;for(let i=start;i<=arr.length-count;i++){let x=Math.max(5,Math.min(30,Number(arr[i].xp)||10));let r=find(i+1,need-x,count-1,sel.concat(arr[i]));if(r)return r}return null}
-  let exact=find(0,target,n,[]);if(exact)return exact;
-  let best=null,bestSum=-1;
-  function bestUnder(start,need,count,sel){if(count===0){let sum=target-need;if(sum>bestSum){bestSum=sum;best=sel}return}if(arr.length-start<count)return;for(let i=start;i<=arr.length-count;i++){let x=Math.max(5,Math.min(30,Number(arr[i].xp)||10));if(need-x<0)continue;bestUnder(i+1,need-x,count-1,sel.concat(arr[i]))}}
-  bestUnder(0,target,n,[]);return best||arr.slice(0,n)}
+const FIXED_QUESTS=[["🎒","Prepara la borsa per il giorno dopo",10],["👕","Preparati e vestiti prima di andare a scuola",10],["🛏️","Fai il letto",5],["👚","Prepara i vestiti per il giorno dopo",10],["🧹","Fai il servizio del tuo turno",15]];
+const TURN_PATTERNS=[/apparecch/i,/sparecch/i,/svuot.*lavastoviglie/i,/lavastoviglie/i];
+const FIXED_SIMILAR=[/prepara.*borsa/i,/prepara.*zaino.*materiale/i,/preparati.*vest/i,/vestiti.*prima.*scuola/i,/fai.*letto/i,/sistema.*letto/i,/mantieni.*ordine.*letto/i,/prepara.*vestit.*domani/i,/gestisci.*vestit/i,/vestit.*autonom/i];
+function isExcludedFromVariable(t){let x=String(t);return TURN_PATTERNS.some(r=>r.test(x))||FIXED_SIMILAR.some(r=>r.test(x))}
+function normQuest(t){return String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim()}
+function dailyQs(k){const all=assigned(k);const fixed=FIXED_QUESTS.map(([,text])=>all.find(q=>normQuest(q.text)===normQuest(text))).filter(Boolean);let vars=all.filter(q=>!fixed.some(f=>f.id===q.id)&&!isExcludedFromVariable(q.text));let seed=[...today(),...String(k.id)].reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),7);vars=vars.map(q=>({q,r:((seed=seed*1664525+1013904223>>>0)/4294967296)})).sort((a,b)=>a.r-b.r).map(x=>x.q);return fixed.concat(vars.slice(0,5))}
 function kid(n,a,theme="viola",avatar="none"){return{id:id(),name:n,age:a,xp:0,weekly:0,line:0,dailyBonus:{},theme:THEME_KEYS.includes(theme)?theme:"viola",avatar:avatar||"none",done:{}}}
 function open(){return new Promise((ok,no)=>{let r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>no(r.error)})}
 function get(){return new Promise((ok,no)=>{let r=db.transaction(STORE).objectStore(STORE).get("s");r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 function save(){return new Promise((ok,no)=>{let r=db.transaction(STORE,"readwrite").objectStore(STORE).put(s,"s");r.onsuccess=ok;r.onerror=()=>no(r.error)})}
 function init(){s={version:7,pin:"1234",kids:[kid("Giuseppe",9,"rosso"),kid("Anna Chiara",7,"rosa"),kid("Elisabetta",5,"viola"),kid("Miriam",3,"verde")],lib:[],assign:{},group:{icon:"🤝",text:"Fate insieme qualcosa di utile in casa",done:false,date:today()},reward:{small:350,big:850}};ensure()}
 function ensure(){
- s=s||{}; s.version=7; s.pin=s.pin||"1234"; s.kids=Array.isArray(s.kids)?s.kids:[]; s.lib=Array.isArray(s.lib)?s.lib:[]; s.assign=s.assign&&typeof s.assign==="object"?s.assign:{}; s.reward=s.reward||{small:350,big:850}; s.group=s.group||{icon:"🤝",text:"Fate insieme qualcosa di utile in casa",done:false,date:today()};
- if(!s.kids.length){s.kids=[kid("Giuseppe",9,"rosso"),kid("Anna Chiara",7,"rosa"),kid("Elisabetta",5,"viola"),kid("Miriam",3,"verde")]}
- s.kids.forEach(k=>{k.age=Math.max(1,Math.min(14,Number(k.age)||7));k.theme=THEME_KEYS.includes(k.theme)?k.theme:"viola";k.avatar=k.avatar||"none";k.dailyBonus=k.dailyBonus&&typeof k.dailyBonus==="object"?k.dailyBonus:{};k.xp=Number(k.xp)||0;k.weekly=Number(k.weekly)||0;k.line=Number(k.line)||0;k.done=k.done&&typeof k.done==="object"?k.done:{};s.assign[k.id]=Array.isArray(s.assign[k.id])?s.assign[k.id]:[];pool(Math.max(3,k.age)).forEach(([ic,t])=>{let q=s.lib.find(x=>x.text===t);if(!q){q={id:id(),icon:ic,text:t,xp:xpForText(t)};s.lib.push(q)}else{q.xp=Math.max(5,Math.min(30,Number(q.xp)||xpForText(q.text)))}if(!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)})});
+ s=s||{}; s.version=8; s.pin=s.pin||"1234"; s.kids=Array.isArray(s.kids)?s.kids:[]; s.lib=Array.isArray(s.lib)?s.lib:[]; s.assign=s.assign&&typeof s.assign==="object"?s.assign:{}; s.reward=s.reward||{small:350,big:850}; s.group=s.group||{icon:"🤝",text:"Fate insieme qualcosa di utile in casa",done:false,date:today()};
+ if(!s.kids.length)s.kids=[kid("Giuseppe",9,"rosso"),kid("Anna Chiara",7,"rosa"),kid("Elisabetta",5,"viola"),kid("Miriam",3,"verde")];
+ s.lib=s.lib.filter(q=>q&&q.text&&!isExcludedFromVariable(q.text));
+ FIXED_QUESTS.forEach(([ic,text,xp])=>{let q=s.lib.find(x=>normQuest(x.text)===normQuest(text));if(!q){q={id:id(),icon:ic,text,xp};s.lib.push(q)}else{q.icon=ic;q.xp=xp}});
+ s.kids.forEach(k=>{k.age=Math.max(1,Math.min(14,Number(k.age)||7));k.theme=THEME_KEYS.includes(k.theme)?k.theme:"viola";k.avatar=k.avatar||"none";k.dailyBonus=k.dailyBonus&&typeof k.dailyBonus==="object"?k.dailyBonus:{};k.xp=Number(k.xp)||0;k.weekly=Number(k.weekly)||0;k.line=Number(k.line)||0;k.done=k.done&&typeof k.done==="object"?k.done:{};s.assign[k.id]=Array.isArray(s.assign[k.id])?s.assign[k.id]:[];
+   FIXED_QUESTS.forEach(([ic,text])=>{let q=s.lib.find(x=>normQuest(x.text)===normQuest(text));if(q&&!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)});
+   pool(Math.max(3,k.age)).forEach(([ic,t])=>{if(isExcludedFromVariable(t))return;let q=s.lib.find(x=>normQuest(x.text)===normQuest(t));if(!q){q={id:id(),icon:ic,text:t,xp:xpForText(t)};s.lib.push(q)}else q.xp=Math.max(5,Math.min(30,Number(q.xp)||xpForText(q.text)));if(!s.assign[k.id].includes(q.id))s.assign[k.id].push(q.id)})
+ });
  if(s.group.date!==today()){s.group.done=false;s.group.date=today()}
 }
 async function boot(){
@@ -80,7 +84,7 @@ function pane(k){
   }
   return `<div class="pane active card"><div class="row between"><h2>Quest di oggi</h2><span class="chip">${doneN}/${qs.length}</span></div>
   ${qs.map(q=>{let d=done(k,q);return `<div class="quest ${d?"done":""}"><span class="icon">${q.icon}</span><span class="text">${esc(q.text)} <span class="small">+${q.xp||10} XP</span></span><button data-q="${q.id}">${d?"↩️ Annulla":"✅ Fatto"}</button></div>`}).join("")}
-  <div class="small">10 Quest al giorno. Ogni Quest vale XP diversi in base alla difficoltà/tempo. Completandole tutte raggiungi il prossimo livello.</div></div>`;
+  <div class="small">10 Quest al giorno: 5 fisse e 5 variabili. Gli XP dipendono dalla difficoltà e dal tempo richiesto. 100 XP = 1 livello. Completare tutte le Quest dà un bonus speciale di giornata.</div></div>`;
  }
  if(tab==="pokemon")return`<div class="pane active card"><h2>⚡ Scegli il tuo Pokémon</h2><p class="small">Ogni bambino ha una scelta indipendente. Lo stesso Pokémon può essere scelto da più bambini.</p><div class="grid">${L.map((p,i)=>`<div class="poke ${i===k.line?"selected":""}"><img src="${img(p[3])}"><b>${p[0]}</b><div class="small">${p[1]} → ${p[2]}</div><button data-p="${i}">${i===k.line?"✓ Scelto":"Scegli"}</button></div>`).join("")}</div></div>`;
  return`<div class="pane active card"><h2>🏆 Progressi</h2><div class="grid"><div class="chip">Livello ${lvl(k.xp)}/30</div><div class="chip">XP totale ${k.xp}</div><div class="chip">XP settimana ${k.weekly}</div></div><p>${lvl(k.xp)<30?`Mancano ${lvl(k.xp)*100-k.xp} XP al prossimo livello.`:"🎉 Livello massimo!"}</p><div class="card">🎁 Piccola ricompensa: <b>${s.reward.small} XP</b> settimanali<br>🏆 Grande ricompensa: <b>${s.reward.big} XP</b> settimanali</div></div>`;
@@ -95,8 +99,7 @@ function bind(){
    let qs=dailyQs(k), base=Math.max(5,Math.min(30,Number(q.xp)||10));
    if(d){delete k.done[key];let earned=Number(k.done[key+"|earned"]||0);k.xp=Math.max(0,k.xp-(earned||base));k.weekly=Math.max(0,k.weekly-(earned||base));delete k.done[key+"|earned"]}
    else{k.done[key]=1;k.done[key+"|earned"]=base;k.xp=Math.min(3000,k.xp+base);k.weekly+=base;
-    let all=qs.every(x=>done(k,x));
-    if(all){let total=qs.reduce((a,x)=>a+(Number(x.xp)||10),0);let bonus=Math.max(0,100-total);if(bonus){k.xp=Math.min(3000,k.xp+bonus);k.weekly+=bonus;k.dailyBonus[today()]=bonus}}
+    if(qs.length===10&&qs.every(x=>done(k,x)))k.dailyBonus[today()]=1;
    }
    await save();render();
  });
