@@ -1,3 +1,3 @@
-Pokémon Quest v8.7
+Pokémon Quest v8.9
 
-Fix: XP giornalieri bilanciati tra bambini; catalogo Quest definitivo e persistente; eliminazione definitiva delle Quest rimosse; XP indipendenti per ciascun Pokémon; Quest di gruppo aggiornate.
+Versione con catalogo Quest aggiornato, XP giornalieri bilanciati tra i bambini e cache PWA aggiornata.

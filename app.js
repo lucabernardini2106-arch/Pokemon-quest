@@ -1,5 +1,5 @@
 const DB="pokemonQuestV8",STORE="state";
-const APP_VERSION=88;
+const APP_VERSION=89;
 const THEMES={rosso:{name:"Rosso",strong:"#d63031",soft:"#fff1f1"},rosa:{name:"Rosa",strong:"#e84393",soft:"#fff0f7"},viola:{name:"Viola",strong:"#6c5ce7",soft:"#f2efff"},verde:{name:"Verde",strong:"#00a86b",soft:"#effbf5"},blu:{name:"Blu",strong:"#2878d4",soft:"#eef6ff"},arancione:{name:"Arancione",strong:"#e67e22",soft:"#fff5e9"},oro:{name:"Giallo Oro",strong:"#c79500",soft:"#fff9df"}};
 const THEME_KEYS=Object.keys(THEMES);
 const L=[
@@ -29,6 +29,16 @@ const ensurePokeXP=k=>{if(!Array.isArray(k.pokeXp)||k.pokeXp.length!==L.length){
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function pool(a){return(P.find(x=>a>=x[0]&&a<=x[1])||P[4])[2]}
 function xpForText(t){let x=String(t).toLowerCase();if(/20 minuti|20 min|studio|attività fisica|caccia al tesoro|rompicapo/.test(x))return 20;if(/15 minuti|15 min|senza distrazioni|autonomamente|senza che te lo chied/.test(x))return 15;if(/10 minuti|10 min|leggi|leggere|libro|impara|imparato|organizza|responsabilità/.test(x))return 10;return 5}
+function ageXP(k,q){
+ const base=xpForText(q?.text||"");
+ const age=Math.max(1,Math.min(14,Number(k?.age)||7));
+ if(age<=2)return 5;
+ if(age<=4)return base>=15?10:5;
+ if(age<=6)return base>=20?15:(base>=10?10:5);
+ if(age<=8)return base>=15?15:(base>=10?10:5);
+ if(age<=10)return base;
+ return base;
+}
 const FIXED=[
  {icon:"🎒",text:"Prepara la borsa per il giorno dopo",xp:10},
  {icon:"👕",text:"Preparati e vestiti prima di andare a scuola",xp:10},
