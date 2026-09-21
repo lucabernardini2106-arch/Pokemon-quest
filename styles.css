@@ -38,3 +38,6 @@
 .unlock-card img{width:120px;height:120px;object-fit:contain}
 .unlock-card span{font-size:12px;opacity:.8}
 @media(max-width:600px){.unlock-options{grid-template-columns:1fr}.journey-track{gap:1px}.journey-dot{width:30px;height:30px}}
+
+/* v10.3 - corrected journey and 1-of-3 discovery */
+.journey-track{grid-template-columns:repeat(6,1fr);gap:6px}.journey-node{color:#555}.journey-node.done{color:var(--theme)}.journey-dot{border-color:#d8d8d8;background:#fff}.journey-node.done .journey-dot{border-color:var(--theme);background:var(--theme);color:#fff}.journey-label{font-size:12px;font-weight:800}.journey-next{padding-top:4px}.unlock-options{grid-template-columns:repeat(3,1fr)}.unlock-card{position:relative;border:2px solid #e5e5e5;background:#fff;transition:.15s ease}.unlock-card:has(input:checked){border-color:var(--theme);background:var(--theme-soft);transform:translateY(-2px);box-shadow:0 5px 18px #00000012}.unlock-card.already-owned{opacity:.45;filter:grayscale(1);cursor:not-allowed}.unlock-card img{width:125px;height:125px}.unlock-card b{font-size:1.05rem}@media(max-width:600px){.journey-track{grid-template-columns:repeat(3,1fr);row-gap:14px}.unlock-options{grid-template-columns:repeat(3,1fr)}.unlock-card img{width:100px;height:100px}}
